@@ -1,4 +1,4 @@
-# Description: Class to pull down capitals, states, and country
+# Description: Class that contains classes for countries along with their dictionary and functions
 class Countries:
     class United_States:
         __states = {
