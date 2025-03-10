@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import urllib.parse
 import re
+import countries
 
 # Set zoom level
 ZOOM_LEVEL = 4.6
@@ -49,7 +50,6 @@ def add_capital_markers(map_widget, capitals):
                 map_widget.set_marker(capitals[city]["lat"], capitals[city]["lon"], text=label)
             except Exception as e:
                 print(city)
-
 
 class Map:
     def set_up_map(capital_data):

@@ -39,10 +39,6 @@ def fetch_capital_coordinates():
 
     return states
 
-
-
-
-
 # App class
 class App:
     def __init__(self, root):
@@ -52,8 +48,3 @@ class App:
         capital_data = fetch_capital_coordinates()
 
         map.Map.set_up_map(capital_data)
-
-
-
-
-
