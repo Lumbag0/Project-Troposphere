@@ -36,6 +36,11 @@ def fetch_capital_coordinates():
         "lat": 39.7817,
         "lon": -89.6501,
     }
+    states["Canada"] = {
+        "capital": "Yellowknife",
+        "lat": 62.4540,
+        "lon": 114.3718,
+    }
 
     return states
 
