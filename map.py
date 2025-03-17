@@ -1,24 +1,21 @@
-# Description: Map class, used to build out the map on the application
-import tkintermapview
-# Import for speeding up webscraping
-from concurrent.futures import ThreadPoolExecutor, as_completed
-# Import for webscraping
-import requests
-import urllib.parse
-import re
+# Description: Used to build out the map on the application
 
-# Set zoom level
+import tkintermapview # Displaying interactive map
+from concurrent.futures import ThreadPoolExecutor, as_completed # For multi-threading to speed up web requests
+import requests # For making HTTP requests to fetch weather data
+import urllib.parse # For encoding city names in URLS
+import re # 
+import countries 
+
+# Set initial zoom level
 ZOOM_LEVEL = 4.6
 
-# Used for formatting temp to find
-# Removes + from 
-temperature_regex = re.compile(r"([+-]?\d+(\.\d+)?)")
-
-
-# Function to get average temp
-def fetch_average_temperature(location):
+# Description: Get the temperature for the capital
+# Parameters: Capital to get temperature for
+# Returns: the temperature as a string or None if unable to get the temperature
+def fetch_average_temperature(capital):
     # URL Encode each city for search
-    location_encoded = urllib.parse.quote(location)
+    location_encoded = urllib.parse.quote(capital)
     url = f"http://wttr.in/{location_encoded}?format=%t"
 
     try:
@@ -28,55 +25,75 @@ def fetch_average_temperature(location):
 
         # Pulls temperature from wttr.io format to string
         temperature_str = response.text.strip()
-        
-        # Remove degree sign
-        match = temperature_regex.search(temperature_str)
-        
-        # If there is a temperature
-        if match:
-            # Strip the plus again
-            num_str = match.group(1)
-            return float(num_str.lstrip('+'))
+
+        return temperature_str
+
     except Exception:
         pass
 
     return None
 
+# Description: Core functionality to grab the temperature along with placing on the map
+# Parameters: the map widget
+# Returns: N\A
+def add_capital_markers(map_widget):
+    united_states = countries.United_States
+    states = united_states.get_states()
+    capital_data = {}
 
-# Function to add capital markers on the map
-def add_capital_markers(map_widget, capitals):
-    with ThreadPoolExecutor(
-            max_workers=10) as executor:  # Change max workers for faster but slower speed, we can test with larger datasets
-        future_to_city = {executor.submit(fetch_average_temperature, city): city for city in capitals}
-        
-        # Loop through each completed thread
-        for future in as_completed(future_to_city):
-            city = future_to_city[future]
+    # Loop through each state and add the capital name and coordinate of capital
+    for state in states:
+        capital_data[state] = {
+            "name": united_states.get_capital(state),
+            "coord": united_states.get_capital_coord(state)
+        }
+
+    with ThreadPoolExecutor(max_workers=10) as thread_pool:
+        # Dictionary to map future tasks to their state
+        future_to_state = {}
+
+        # Obtain the temperature of each state asynchronously
+        for state in capital_data:
+            future_task = thread_pool.submit(fetch_average_temperature, capital_data[state]["name"])
+            future_to_state[future_task] = state
+
+        # For each state
+        for completed_future in as_completed(future_to_state):
+            state = future_to_state[completed_future]
+
             try:
-                # Place temperature result from returned thread
-                temp = future.result()
-                print(temp, city, capitals[city]["lat"], capitals[city]["lon"])
-                # Set label to N/A if no results
-                label = f"{temp if temp is not None else 'N/A'}"
+                # Retrieve the temperature result from the completed future task
+                average_temperature = completed_future.result()
+                # print out each state, the temperature of the capital, and the coordinates in the terminal for debugging purposes
+                print(f"Temperature for {state}: {average_temperature}, Coordinates: {capital_data[state]['coord']}")
 
-                # Set marker on the map
-                map_widget.set_marker(capitals[city]["lat"], capitals[city]["lon"], text=label)
-            
-            # If there is an error grabbing the city, print the city
-            except Exception as e:
-                print(f"ERROR: {city}")
+                # Format the label to display the temperature or "N/A if no data is available"
+                temperature_label = f"{average_temperature if average_temperature is not None else 'N/A'}"
 
-class Map:
-    def set_up_map(capital_data):
-        # Set the map size
-        map_widget = tkintermapview.TkinterMapView(width=1920, height=1080, corner_radius=0)
-        map_widget.pack()
+                # Retrieve the lat and long of the states capital
+                latitude = capital_data[state]["coord"]["lat"]
+                longitude = capital_data[state]["coord"]["lon"]
 
-        # Set starting position and zoom level
-        map_widget.set_zoom(ZOOM_LEVEL)
-        map_widget.set_position(38.8339, -104.8214)
+                # Add marker to the map with the temperature as the label
+                map_widget.set_marker(latitude, longitude, text=temperature_label)
+            except Exception as error:
+                print(f"ERROR: Could not fetch temperature for {state}")
+                print(f"Exception: {error}")
 
-        # Set the zoom out level to show US capitals
-        map_widget.pack()
+def set_up_map():
+    map_widget = tkintermapview.TkinterMapView(
+        width=1920,
+        height=1080,
+        corner_radius=0
+    )
 
-        add_capital_markers(map_widget, capital_data)
+    # Set the initial Zoom
+    map_widget.set_zoom(ZOOM_LEVEL)
+
+    # Center the map at Colorado Springs
+    map_widget.set_position(38.8339, -104.8214) 
+
+    # Add markers for all state capitals
+    add_capital_markers(map_widget)
+
+    map_widget.pack()
