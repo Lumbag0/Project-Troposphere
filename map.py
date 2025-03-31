@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed # For multi-threading to speed up web requests
 import requests # For making HTTP requests
 import sys
+from shapely.geometry import shape
 
 # Set initial zoom level
 ZOOM_LEVEL = 4.6
@@ -46,3 +47,16 @@ class Map:
             sys.exit(1)
         else:
             return response.json()["features"]
+        
+    # Description: Uses built in geomtry country to find the center point of a certain territory 
+    # Parameters: N\A
+    # Returns: The center point latitude and longitude of said country / territory
+    def get_polygon_center(geometry):
+        if geometry.geom_type == "Polygon":
+            return geometry.centroid.y, geometry.centroid.x
+        elif geometry.geom_type == "MultiPolygon":
+            return geometry.representative_point().y, geometry.representative_point().x
+        else:
+            return None, None
+        
+    
