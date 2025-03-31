@@ -61,6 +61,10 @@ class Map:
             return None, None
         
 class Color:
+    # Description: Returns the final color based on how hot or cold the temperature is
+    # Example: If C1 is red and C2 is orange, the factor is .5, it will return a reddish orange
+    # Parameters: Starting color, ending color, how much between they are from one another
+    # Returns: Hex color value
     def interpolate_color(c1, c2, factor):
         r1, g1, b1 = mcolors.hex2color(c1)
         r2, g2, b2 = mcolors.hex2color(c2)
