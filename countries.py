@@ -296,7 +296,7 @@ class World:
         "Ukraine": {"capital": "Kyiv", "capital_coord": {"lat": 50.4501, "lon": 30.5031}},
         "United Arab Emirates": {"capital": "Abu Dhabi", "capital_coord": {"lat": 24.4539, "lon": 54.3773}},
         "United Kingdom": {"capital": "London", "capital_coord": {"lat": 51.5074, "lon": -0.1278}},
-        "United States": {"capital": "Washington, D.C.", "capital_coord": {"lat": 38.8954, "lon": -77.0365}},
+        "United States": {"capital": "Washington, D.C.", "countriescapital_coord": {"lat": 38.8954, "lon": -77.0365}},
         "Uruguay": {"capital": "Montevideo", "capital_coord": {"lat": -34.9011, "lon": -56.1645}},
         "Uzbekistan": {"capital": "Tashkent", "capital_coord": {"lat": 41.2995, "lon": 69.2401}},
         "Vanuatu": {"capital": "Port Vila", "capital_coord": {"lat": -17.7333, "lon": 168.3167}},
@@ -307,39 +307,39 @@ class World:
         "Zambia": {"capital": "Lusaka", "capital_coord": {"lat": -15.3875, "lon": 28.3228}},
         "Zimbabwe": {"capital": "Harare", "capital_coord": {"lat": -17.8292, "lon": 31.0522}}}
 
-    '''
-    Description: Gets the Countries
-    Parameters: N\A
-    Returns: List of Countries
-    '''
-    @staticmethod
-    def get_countries():
-        return list(World.__countries.keys())
-    
-    '''
-    Description: Gets the Capital of the Country provided
-    Parameters: Name of the Country to get capital for
-    Returns: String entry for capital, returns None if it cannot get the capital
-    '''
-    @staticmethod
-    def get_country_capital(country):
-        country_capital = World.__countries.get(country)["capital"]
+        '''
+        Description: Gets the Countries
+        Parameters: N\A
+        Returns: List of Countries
+        '''
+        @staticmethod
+        def get_countries():
+            return list(World.Countries.__countries.keys())
+        
+        '''
+        Description: Gets the Capital of the Country provided
+        Parameters: Name of the Country to get capital for
+        Returns: String entry for capital, returns None if it cannot get the capital
+        '''
+        @staticmethod
+        def get_country_capital(country):
+            country_capital = World.Countries.__countries.get(country)["capital"]
 
-        # Make sure that entry was pulled
-        if not country_capital:
-            print(f"[ERROR]: {country} not found...")
-        else:
-            return country_capital
-    
-    '''
-    Description: Gets the coordinates for the capital 
-    Parameters: Name of the country to get capital coordinates for
-    Returns: dictionary entry for the coordinates
-    '''
-    @staticmethod
-    def get_country_capital_coord(country):
-        coord = World.__countries.get(country)["capital_coord"]
-        if not coord:
-            print(f"[ERROR]: {country} not found...")
-        else:
-            return coord
+            # Make sure that entry was pulled
+            if not country_capital:
+                print(f"[ERROR]: {country} not found...")
+            else:
+                return country_capital
+        
+        '''
+        Description: Gets the coordinates for the capital 
+        Parameters: Name of the country to get capital coordinates for
+        Returns: dictionary entry for the coordinates
+        '''
+        @staticmethod
+        def get_country_capital_coord(country):
+            coord = World.Countries.__countries.get(country)["capital_coord"]
+            if not coord:
+                print(f"[ERROR]: {country} not found...")
+            else:
+                return coord
