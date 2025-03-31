@@ -2,6 +2,8 @@ import csv
 import requests
 import sys
 import gzip
+import numpy as np
+from scipy.spatial import cKDTree
 
 class Weather:
     # Description: Create a list of each location ID from the list of cities from weatherbit.io
@@ -55,6 +57,7 @@ class Weather:
                 print(f"Source: Weatherbit.io")
                 print(f"Status Code: {response.status_code}")
                 print(f"Details: {response.text}")
+
     # Description: Read in the current weather file foor all the cities and create a list of coordinates
     # That correspond to a temperature, this way we know the temperature at said coordiantes
     # Parameters: Dictionary of cities by location ID with Longitude and Latitude as values
@@ -81,3 +84,10 @@ class Weather:
                     print(f"ERROR: Skipping row: {error}")
         return temperature_data
     
+    # Description: Convert coordinates to a numpy array for faster computations when making calculations on it
+    # Along with easier to use for built-in numpy functions
+    # Parameters: City Coordinates Dictionary
+    # Returns: Compressed KD Tree
+    def create_city_tree(city_coordinates):
+        city_coords = np.array(list(city_coordinates.values()))
+        return cKDTree(city_coords)
