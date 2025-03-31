@@ -1,6 +1,5 @@
 # Description: Class used to build out the map on the application
 
-from concurrent.futures import ThreadPoolExecutor, as_completed # For multi-threading to speed up web requests
 import requests # For making HTTP requests
 import sys
 from shapely.geometry import shape
@@ -8,13 +7,7 @@ import matplotlib.colors as mcolors
 from weather import Weather
 import numpy as np
 import folium
-
-# Set initial zoom level
-ZOOM_LEVEL = 4.6
-
-# Coordinates for Colorado Springs, Colorado
-COS_LAT = 38.8339
-COS_LONG = -104.8214
+from countries import World
 
 class Map:
     # Description: Get the borders of the countries so they can be plotted
@@ -135,6 +128,54 @@ class Map:
                             fill_opacity=0.5,
                             popup=f"Temp: {temperature}°C"
                         ).add_to(layer)
+
+    def add_capital_markers(folium_map, city_coordinates, temperature_data):
+        # Create a feature group layer for capital markers
+        capitals_layer = folium.FeatureGroup(name="CapitalsLayer")
+
+        # Get the United States
+        united_states = World.United_States
+        states = united_states.get_states()
+
+        # Get Countries
+        world = World.Countries
+        countriesFromCountries = world.get_countries()
+        capital_data = {}
+
+        # Loop through the US states add to list with coordinates
+        for state in states:
+            capital_name = united_states.get_capital(state)
+            capital_coord = united_states.get_capital_coord(state)
+
+            if capital_name and capital_coord:
+                capital_data[state] = {"name": capital_name, "coord": (capital_coord["lat"], capital_coord["lon"])}
+        
+        # Loop through countries and add to list with coordinates
+        for country in countriesFromCountries:
+            capital_name = world.get_country_capital(country)
+            capital_coord = world.get_country_capital_coord(country)
+
+            if capital_name and capital_coord:
+                capital_data[country] = {"name": capital_name, "coord": (capital_coord["lat"], capital_coord["lon"])}
+
+        # Iterate through states and countries and get the average temperatures to be displayed in text on the map
+        for state, data in capital_data.items():
+            capital_name = data["name"]
+            lat, lon = data["coord"]
+
+            average_temperature = Weather.fetch_average_temperature((lat, lon), city_coordinates, temperature_data)
+            if average_temperature is not None:
+                text_color = "black"
+                label_html = f'<div style="color: {text_color}; font-weight: bold; font-size: 12px;">{average_temperature}°C</div>'
+                label = folium.Marker(
+                    location=[lat, lon],
+                    icon=folium.DivIcon(html=label_html)
+                )
+                capitals_layer.add_child(label)
+            else:
+                print("No Temp")
+        # add layer of text temps to the map
+        folium_map.add_child(capitals_layer)
 
 class Color:
     # Description: Returns the final color based on how hot or cold the temperature is
