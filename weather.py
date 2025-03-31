@@ -84,6 +84,25 @@ class Weather:
                     print(f"ERROR: Skipping row: {error}")
         return temperature_data
     
+    # Description: Get the temperature for the capital
+    # Parameters: Capital to get temperature for
+    # Returns: Temperature as a string or none if unable to get the temperature
+    def fetch_average_temperature(capital_coord, city_coordinates, temperature_data):
+        if not city_coordinates:
+            return None
+        lat, lon = capital_coord
+
+        # Convert city coordinates to a numpy array for spatial searching
+        city_coords = np.array(list(city_coordinates.values()))
+
+        # Create a get nearest neighbor
+        city_tree = cKDTree(city_coords)
+
+        # Find the cloests city in the dataset
+        _, nearest_idx = city_tree.query([lat, lon], k=1)
+        nearest_city_coords = tuple(city_coords[nearest_idx])
+        return temperature_data.get(nearest_city_coords, None)
+    
     # Description: Convert coordinates to a numpy array for faster computations when making calculations on it
     # Along with easier to use for built-in numpy functions
     # Parameters: City Coordinates Dictionary
