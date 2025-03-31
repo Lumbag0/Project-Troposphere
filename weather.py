@@ -1,6 +1,7 @@
 import csv
 import requests
 import sys
+import gzip
 
 class Weather:
     # Description: Create a list of each location ID from the list of cities from weatherbit.io
@@ -54,4 +55,29 @@ class Weather:
                 print(f"Source: Weatherbit.io")
                 print(f"Status Code: {response.status_code}")
                 print(f"Details: {response.text}")
+    # Description: Read in the current weather file foor all the cities and create a list of coordinates
+    # That correspond to a temperature, this way we know the temperature at said coordiantes
+    # Parameters: Dictionary of cities by location ID with Longitude and Latitude as values
+    # Returns: Dictionary of Coordinates and the temperatures at the coordinates
+    def parse_temperature_data(city_coordinates):
+        temperature_data = {}
+        with gzip.open('current_weather.csv.gz', 'rt', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+
+            # Iterate through each row
+            for row in reader:
+                try:
+                    # Extract the location ID
+                    location_id = int(row['Location ID'])
+
+                    # If the location ID is within the dictionary city_coordinates
+                    # Extract the latitude and longitude from the city_coordinates dictionary and store the 
+                    # temperature where the latitude and longitude is the key and the value is the temperature
+                    if location_id in city_coordinates:
+                        lat, lon = city_coordinates[location_id]
+                        temperature_data[(lat, lon)] = float(row['Temperature (C)'])
+              
+                except(ValueError, KeyError) as error:
+                    print(f"ERROR: Skipping row: {error}")
+        return temperature_data
     
