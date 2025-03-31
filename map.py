@@ -31,3 +31,18 @@ class Map:
         else:
             return response.json()["features"]
     
+    # Description: Get the borders of the territories for them to be plotted on the map
+    # Parameters: N\A
+    # Returns: Borders of the territories for them to be plotted on the map
+    def get_subdivisions_data():
+        url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson"
+        
+        # Get JSON of each state and province
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as error:
+            print(f"ERROR: Failed to fetch data -- {error}")
+            sys.exit(1)
+        else:
+            return response.json()["features"]
