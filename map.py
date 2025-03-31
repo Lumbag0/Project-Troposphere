@@ -5,6 +5,9 @@ import requests # For making HTTP requests
 import sys
 from shapely.geometry import shape
 import matplotlib.colors as mcolors
+from weather import Weather
+import numpy as np
+import folium
 
 # Set initial zoom level
 ZOOM_LEVEL = 4.6
@@ -60,6 +63,79 @@ class Map:
         else:
             return None, None
         
+    # Description: Goes through the countries and territories and plots them on the map
+    # Parameters: Layer of which countries or territories are stored, data from the big list sent from 
+    # countries / territories file, the file of temperatures from all of the cities, and coordinates from 
+    # the city file with corresponding city lat/lon and location ID
+    # Returns: N\A
+    def plot_borders(self, layer, data, temperature_data, city_coordinates):
+        # Turn the list of city ID's with corresponding latitude and longitude into a certain numpy array 
+        # for easier math using compressed KD Tree for nearest neighbor finding
+        city_tree = Weather.create_city_tree(city_coordinates)
+        city_coords_array = np.array(list(city_coordinates.values()))
+
+        centers = []
+        features_info = []
+
+        for i, feature in enumerate(data):
+            geometry = shape(feature["geometry"])
+
+            lat, lon = self.get_polygon_center(geometry)
+            if lat is not None and lon is not None:
+                # Add center locations to the list
+                centers.append([lat, lon])
+
+                # Store the shape of countries/territories and center of it in a lilst
+                features_info.append((feature, geometry, (lat, lon)))
+
+            # Find the nearest city to the corresponding territory/countries geometric center and
+            # assign it to the nearest indicies variable accordingly
+            centers_np = np.array(centers)
+            distances, nearest_indices = city_tree.quimportery(centers_np, k=1)
+            valid_result_idx = 0
+
+            # Loop through the geometries and centers of them to map out the correct colors and shapes
+            # On the map for the territories/countries
+            for feature, geometry, center in features_info:
+                if center is not None:
+                    city_idx = nearest_indices[valid_result_idx]
+                    valid_result_idx += 1
+                    closest_city_coords = tuple(city_coords_array[city_idx])
+
+                    # Get temperature from coordinates of the city closest to the center of the shape 
+                    # of the territory/country
+                    temperature = temperature_data.get(closest_city_coords, None)
+
+                    # Use color function to get the corresponding color from the temperature
+                    color = Color.get_temperature_color(temperature) if temperature is not None else "gray"
+                else:
+                    # Debugging if broken
+                    color = "gray"
+                    temperature = None
+
+                # Plot the shape of the territory/country on the map for multiple geometries with the 
+                # given temperatures, colors, coordinates, etc.
+                if geometry.geom_type == "Polygon":
+                    coords = [(lat, lon) for lon, lat in geometry.exterior.coords]
+                    folium.Polygon(
+                        locations=coords,
+                        color=color,
+                        fill=True,
+                        fill_opacity=0.5,
+                        popup=f"Temp: {temperature}°C"
+                    ).add_to(layer)
+
+                elif geometry.geom_type == "MultiPolygon":
+                    for polygon in geometry.geoms:
+                        coords = [(lat, lon) for lon, lat in polygon.exterior.coords]
+                        folium.Polygon(
+                            locations=coords,
+                            color=color,
+                            fill=True,
+                            fill_opacity=0.5,
+                            popup=f"Temp: {temperature}°C"
+                        ).add_to(layer)
+
 class Color:
     # Description: Returns the final color based on how hot or cold the temperature is
     # Example: If C1 is red and C2 is orange, the factor is .5, it will return a reddish orange
