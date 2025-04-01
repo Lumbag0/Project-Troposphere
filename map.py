@@ -13,8 +13,10 @@ class Map:
     # Description: Get the borders of the countries so they can be plotted
     # Parameters: N\A
     # Returns: Borders of the countries in JSON
+    @staticmethod
     def get_country_data():
-        url = "https://raw.githubusercontent/johan/world.geo.json/master/countries.geo.json"
+        print("Getting the border data...")
+        url = "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json"
 
         # Obtain the borders from the URL
         # Handle unknown exceptions
@@ -32,7 +34,9 @@ class Map:
     # Description: Get the borders of the territories for them to be plotted on the map
     # Parameters: N\A
     # Returns: Borders of the territories for them to be plotted on the map
+    @staticmethod
     def get_subdivisions_data():
+        print("Getting border territory data...")
         url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson"
         
         # Get JSON of each state and province
@@ -48,6 +52,7 @@ class Map:
     # Description: Uses built in geomtry country to find the center point of a certain territory 
     # Parameters: N\A
     # Returns: The center point latitude and longitude of said country / territory
+    @staticmethod
     def get_polygon_center(geometry):
         if geometry.geom_type == "Polygon":
             return geometry.centroid.y, geometry.centroid.x
@@ -62,9 +67,13 @@ class Map:
     # the city file with corresponding city lat/lon and location ID
     # Returns: N\A
     def plot_borders(self, layer, data, temperature_data, city_coordinates):
-        # Turn the list of city ID's with corresponding latitude and longitude into a certain numpy array 
-        # for easier math using compressed KD Tree for nearest neighbor finding
-        city_tree = Weather.create_city_tree(city_coordinates)
+        print("Plotting borders...")
+        color_instance = Color()
+        weather_instance = Weather()
+
+        # Turn the list of city ID's with corresponding latitude and longitude into a certain Numpy array for
+        # easier math using cKDTree for nearest neighbor finding
+        city_tree =  weather_instance.create_city_tree(city_coordinates)
         city_coords_array = np.array(list(city_coordinates.values()))
 
         centers = []
@@ -73,43 +82,52 @@ class Map:
         for i, feature in enumerate(data):
             geometry = shape(feature["geometry"])
 
+            # Run function to get geometric center to the territories/countries
             lat, lon = self.get_polygon_center(geometry)
-            if lat is not None and lon is not None:
-                # Add center locations to the list
-                centers.append([lat, lon])
 
-                # Store the shape of countries/territories and center of it in a lilst
+            if lat is not None and lon is not None:
+                # Add center locations to list
+                centers.append([lat, lon])
+                
+                # Stores the shape of countries/territories and center of them in to a list
                 features_info.append((feature, geometry, (lat, lon)))
 
-            # Find the nearest city to the corresponding territory/countries geometric center and
-            # assign it to the nearest indicies variable accordingly
-            centers_np = np.array(centers)
-            distances, nearest_indices = city_tree.quimportery(centers_np, k=1)
-            valid_result_idx = 0
+        # Find nearest city to the corresponding territory/countries geometric center, and assign it to nearest_indicies accordingly
+        centers_np = np.array(centers)
+        distances, nearest_indicies = city_tree.query(centers_np, k=1)
 
-            # Loop through the geometries and centers of them to map out the correct colors and shapes
-            # On the map for the territories/countries
-            for feature, geometry, center in features_info:
-                if center is not None:
-                    city_idx = nearest_indices[valid_result_idx]
-                    valid_result_idx += 1
-                    closest_city_coords = tuple(city_coords_array[city_idx])
+        valid_result_idx = 0
 
-                    # Get temperature from coordinates of the city closest to the center of the shape 
-                    # of the territory/country
-                    temperature = temperature_data.get(closest_city_coords, None)
+        # Loop through the geometries and centers of them to map out the correct colors and shapes on the map for the territories/countries
+        for feature, geometry, center in features_info:
+            if center is not None:
+                city_idx = nearest_indicies[valid_result_idx]
+                valid_result_idx += 1
+                closest_city_coords = tuple(city_coords_array[city_idx])
 
-                    # Use color function to get the corresponding color from the temperature
-                    color = Color.get_temperature_color(temperature) if temperature is not None else "gray"
-                else:
-                    # Debugging if broken
-                    color = "gray"
-                    temperature = None
+                # Get temperature from coordinates of the city closest to the center of the shape of the territory/country
+                temperature = temperature_data.get(closest_city_coords, None)
 
-                # Plot the shape of the territory/country on the map for multiple geometries with the 
-                # given temperatures, colors, coordinates, etc.
-                if geometry.geom_type == "Polygon":
-                    coords = [(lat, lon) for lon, lat in geometry.exterior.coords]
+                # Use color function to get the corresponding color for the temperature
+                color = color_instance.get_temperature_color(temperature) if temperature is not None else "gray"
+            else:
+                # Debugging if broken
+                color = "gray"
+                temperature = None
+            
+            # Plot the shape of the territory/country on the map for multiple geometries with the given temperatures, colors, coordinates, etc.
+            if geometry.geom_type == "Polygon":
+                coords = [(lat, lon) for lon, lat in geometry.exterior.coords]
+                folium.Polygon(
+                    locations=coords,
+                    color=color,
+                    fill=True,
+                    fill_opacity=0.5,
+                    popup=f"Temp: {temperature}°C"
+                ).add_to(layer)
+            elif geometry.geom_type == "MultiPolygon":
+                for polygon in geometry.geoms:
+                    coords = [(lat, lon) for lon, lat in polygon.exterior.coords]
                     folium.Polygon(
                         locations=coords,
                         color=color,
@@ -118,20 +136,14 @@ class Map:
                         popup=f"Temp: {temperature}°C"
                     ).add_to(layer)
 
-                elif geometry.geom_type == "MultiPolygon":
-                    for polygon in geometry.geoms:
-                        coords = [(lat, lon) for lon, lat in polygon.exterior.coords]
-                        folium.Polygon(
-                            locations=coords,
-                            color=color,
-                            fill=True,
-                            fill_opacity=0.5,
-                            popup=f"Temp: {temperature}°C"
-                        ).add_to(layer)
-
+    @staticmethod
     def add_capital_markers(folium_map, city_coordinates, temperature_data):
+        print("Adding capital markers...")
+
         # Create a feature group layer for capital markers
         capitals_layer = folium.FeatureGroup(name="CapitalsLayer")
+        
+        capital_data = {}
 
         # Get the United States
         united_states = World.United_States
@@ -140,7 +152,6 @@ class Map:
         # Get Countries
         world = World.Countries
         countriesFromCountries = world.get_countries()
-        capital_data = {}
 
         # Loop through the US states add to list with coordinates
         for state in states:
@@ -148,8 +159,8 @@ class Map:
             capital_coord = united_states.get_capital_coord(state)
 
             if capital_name and capital_coord:
-                capital_data[state] = {"name": capital_name, "coord": (capital_coord["lat"], capital_coord["lon"])}
-        
+                capital_data[state] = {"name": capital_name, "coord":(capital_coord["lat"], capital_coord["lon"])}
+
         # Loop through countries and add to list with coordinates
         for country in countriesFromCountries:
             capital_name = world.get_country_capital(country)
@@ -174,5 +185,6 @@ class Map:
                 capitals_layer.add_child(label)
             else:
                 print("No Temp")
+                
         # add layer of text temps to the map
         folium_map.add_child(capitals_layer)

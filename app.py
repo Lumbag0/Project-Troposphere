@@ -24,8 +24,12 @@ class App:
 
         # Start the system for UI, User input, etc.
         sys.exit(app.exec_())
-        
-    def create_folium_map(city_coordinates, key):
+    
+    @staticmethod
+    def create_folium_map(city_coordinates):
+        print("Creating map...")
+        map_instance = Map()
+
         map_file_path = os.path.join(os.getcwd(), "map.html")
         folium_map = folium.Map(location=[20, 0], zoom_start=2, control_scale=True)
 
@@ -35,14 +39,16 @@ class App:
         countries_data = Map.get_country_data()
         subdivisions_data = Map.get_subdivisions_data()
 
+        key = App.get_key()
+
         Weather.fetch_temperature_data(f"{key}")
         temperature_data = Weather.parse_temperature_data(city_coordinates)
 
         # Plot the borders for the countries
-        Map.plot_borders(countries_layer, countries_data, temperature_data, city_coordinates)
+        map_instance.plot_borders(countries_layer, countries_data, temperature_data, city_coordinates)
 
         # Plot the borders for the territories
-        Map.plot_borders(subdivisions_layer, subdivisions_data, temperature_data, city_coordinates)
+        map_instance.plot_borders(subdivisions_layer, subdivisions_data, temperature_data, city_coordinates)
 
         # Add layer of countries plotted to the map
         folium_map.add_child(countries_layer)
@@ -120,6 +126,7 @@ class App:
     # Description: Gets the key from the user to use to authenticate with Weatherbit.io
     # Parameters: N\A
     # Returns: String
+    @staticmethod
     def get_key() -> str:
         valid_key = False
         # Loop until valid key is entered
@@ -140,7 +147,7 @@ class CustomWebEnginePage(QWebEnginePage):
 class MapWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        print("Creating window...")
         # Set up the window name / window size / position
         self.setWindowTitle("Project Troposphere")
         self.setGeometry(0, 0, 2000, 1000)
@@ -151,7 +158,7 @@ class MapWindow(QMainWindow):
         self.browser = QWebEngineView(self.container)
 
         # Set size of browser window
-        self.browser.setGeomtry(0, 0, 2000, 1000)
+        self.browser.setGeometry(0, 0, 2000, 1000)
 
         # Assign a custom web engine page to handle additional web functionality
         self.browser.setPage(CustomWebEnginePage(self.browser))
@@ -163,7 +170,7 @@ class MapWindow(QMainWindow):
         map_file_path = App.create_folium_map(city_coordinates)
         
         # Load folium map into the web in app
-        self.browser.Url(QUrl.fromLocalFile(map_file_path))
+        self.browser.setUrl(QUrl.fromLocalFile(map_file_path))
 
         # Run JS code to make sure you can get output from JS to python for later use
         self.browser.loadFinished.connect(self.run_debug_script)

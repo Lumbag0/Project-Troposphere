@@ -76,13 +76,13 @@ class World:
         @staticmethod
         def get_state_abbr(state):
             state_abbr = World.United_States.__states.get(state)["abbr"]
-            
-            # Make sure that the entry was pulled
+
             if not state_abbr:
-                print(f"[ERROR]: {state} not found...")
+                print(f"[ERROR]: {state} not found")
+                return None
             else:
                 return state_abbr
-
+        
         '''
         Description: Gets the Capital of the State provided
         Parameters: Name of the State to get capital for
@@ -91,12 +91,13 @@ class World:
         @staticmethod
         def get_capital(state):
             state_capital = World.United_States.__states.get(state)["capital"]
-
-            # Make sure that entry was pulled
+            
             if not state_capital:
-                print(f"[ERROR]: {state} not found...")
+                print(f"ERROR: {state} was not found")
+                return None
             else:
                 return state_capital
+
         '''
         Description: Gets the coordinates for the capital 
         Parameters: Name of the State to get capital coordinates for
@@ -105,11 +106,13 @@ class World:
         @staticmethod
         def get_capital_coord(state):
             coord = World.United_States.__states.get(state)["capital_coord"]
-
+            
             if not coord:
                 print(f"[ERROR]: {state} not found...")
+                return None
             else:
                 return coord
+            
     class Countries:
         __countries = {
         "Afghanistan": {"capital": "Kabul", "capital_coord": {"lat": 34.5281, "lon": 69.1723}},
@@ -296,7 +299,7 @@ class World:
         "Ukraine": {"capital": "Kyiv", "capital_coord": {"lat": 50.4501, "lon": 30.5031}},
         "United Arab Emirates": {"capital": "Abu Dhabi", "capital_coord": {"lat": 24.4539, "lon": 54.3773}},
         "United Kingdom": {"capital": "London", "capital_coord": {"lat": 51.5074, "lon": -0.1278}},
-        "United States": {"capital": "Washington, D.C.", "countriescapital_coord": {"lat": 38.8954, "lon": -77.0365}},
+        "United States": {"capital": "Washington, D.C.", "capital_coord": {"lat": 38.8954, "lon": -77.0365}},
         "Uruguay": {"capital": "Montevideo", "capital_coord": {"lat": -34.9011, "lon": -56.1645}},
         "Uzbekistan": {"capital": "Tashkent", "capital_coord": {"lat": 41.2995, "lon": 69.2401}},
         "Vanuatu": {"capital": "Port Vila", "capital_coord": {"lat": -17.7333, "lon": 168.3167}},
@@ -339,7 +342,9 @@ class World:
         @staticmethod
         def get_country_capital_coord(country):
             coord = World.Countries.__countries.get(country)["capital_coord"]
+            
             if not coord:
-                print(f"[ERROR]: {country} not found...")
+                print(f"[ERROR]: {country} not found")
+                return None
             else:
                 return coord

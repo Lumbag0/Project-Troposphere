@@ -9,8 +9,11 @@ class Weather:
     # Description: Create a list of each location ID from the list of cities from weatherbit.io
     # Parameters: N\A
     # Returns: Dictionary of cities by location ID with corresponding latitude and longitude
+    @staticmethod
     def load_city_coordinates() -> dict:
+        print("Loading coordinates from cities_full.csv...")
         city_coordinates = {}
+
         with open('cities_full.csv', 'r', encoding='utf-8') as csvfile:
             # Read CSV as a dictionary
             reader = csv.DictReader(csvfile)
@@ -22,12 +25,15 @@ class Weather:
 
                 # Store latitude and longitude with a key ID
                 city_coordinates[location_id] = (lat, lon)
+                
         return city_coordinates
     
     # Description: Grab and save the file of the dataset of cities with corresponding temperatures
     # Parameters: API Key to Weatherbit.io
     # Returns: N\A
+    @staticmethod
     def fetch_temperature_data(api_key):
+        print("Fetching current weather from Weatherbit.io...")
         weather_bit = f"https://api.weatherbit.io/v2.0/bulk/files/current.csv.gz?key={api_key}"
         try:
             response = requests.get(weather_bit, timeout=10)
@@ -62,7 +68,9 @@ class Weather:
     # That correspond to a temperature, this way we know the temperature at said coordiantes
     # Parameters: Dictionary of cities by location ID with Longitude and Latitude as values
     # Returns: Dictionary of Coordinates and the temperatures at the coordinates
+    @staticmethod
     def parse_temperature_data(city_coordinates):
+        print("Parsing current weather...")
         temperature_data = {}
         with gzip.open('current_weather.csv.gz', 'rt', encoding='utf-8') as file:
             reader = csv.DictReader(file)
@@ -87,7 +95,9 @@ class Weather:
     # Description: Get the temperature for the capital
     # Parameters: Capital to get temperature for
     # Returns: Temperature as a string or none if unable to get the temperature
+    @staticmethod
     def fetch_average_temperature(capital_coord, city_coordinates, temperature_data):
+        #print("Getting the temperature for the capital...")
         if not city_coordinates:
             return None
         lat, lon = capital_coord
@@ -107,6 +117,7 @@ class Weather:
     # Along with easier to use for built-in numpy functions
     # Parameters: City Coordinates Dictionary
     # Returns: Compressed KD Tree
+    @staticmethod
     def create_city_tree(city_coordinates):
         city_coords = np.array(list(city_coordinates.values()))
         return cKDTree(city_coords)
