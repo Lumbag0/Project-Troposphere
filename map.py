@@ -8,6 +8,8 @@ import numpy as np
 import folium
 from countries import World
 from color import Color
+import random
+
 
 class Map:
     # Description: Get the borders of the countries so they can be plotted
@@ -138,11 +140,12 @@ class Map:
 
     @staticmethod
     def add_capital_markers(folium_map, city_coordinates, temperature_data):
+
         print("Adding capital markers...")
 
         # Create a feature group layer for capital markers
-        capitals_layer = folium.FeatureGroup(name="CapitalsLayer")
-        
+        capitals_layer = folium.FeatureGroup(name="capitalsLayer")
+
         capital_data = {}
 
         # Get the United States
@@ -185,6 +188,40 @@ class Map:
                 capitals_layer.add_child(label)
             else:
                 print("No Temp")
-                
+
         # add layer of text temps to the map
         folium_map.add_child(capitals_layer)
+
+    @staticmethod
+    def add_city_markers(folium_map, city_coordinates, temperature_data):
+        print("Adding city markers...")
+
+        # Create a feature group layer for more city markers
+        cities_layer = folium.FeatureGroup(name="capitalsLayer2")
+
+        # Shuffle and limit to 1000 cities at random
+        city_items = list(city_coordinates.items())
+        random.shuffle(city_items)
+        city_items = city_items[:1000]
+
+        for city, coord in city_items:
+            lat, lon = coord
+
+            # Fetch temperature for the city from the temperature data
+            temperature = temperature_data.get(coord, None)
+
+            # If a valid temperature is available, plot the marker with temperature
+            if temperature is not None:
+                text_color = "black"  # You can customize text color based on temperature if needed
+                label_html = f'<div style="color: {text_color}; font-weight: bold; font-size: 12px;">{temperature}°C</div>'
+                label = folium.Marker(
+                    location=[lat, lon],
+                    icon=folium.DivIcon(html=label_html)
+                )
+                cities_layer.add_child(label)
+            else:
+                print(f"No temperature data for city at {lat}, {lon}")
+
+        # Add the cities layer to the map
+        folium_map.add_child(cities_layer)
+

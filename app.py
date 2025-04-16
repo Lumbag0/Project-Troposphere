@@ -31,7 +31,8 @@ class App:
         map_instance = Map()
 
         map_file_path = os.path.join(os.getcwd(), "map.html")
-        folium_map = folium.Map(location=[20, 0], zoom_start=2, control_scale=True)
+
+        folium_map = folium.Map(location=[37.8, -96], zoom_start=5, control_scale=True)
 
         countries_layer = folium.FeatureGroup(name="CountriesLayer")
         subdivisions_layer = folium.FeatureGroup(name="TerritoriesLayer")
@@ -59,26 +60,32 @@ class App:
         # Add capital markers to the map
         Map.add_capital_markers(folium_map, city_coordinates, temperature_data)
 
+        # Add other city markers to the map
+        Map.add_city_markers(folium_map, city_coordinates, temperature_data)
+
         # Implement JS into the application
         folium_map.get_root().html.add_child(folium.Element("""<script>
             document.addEventListener("DOMContentLoaded", function () {
                 window.map = Object.values(window).find(obj => obj instanceof L.Map);
-            
+
                 window.countriesLayer = null;
                 window.subdivisionsLayer = null;
                 window.capitalsLayer = null;
-            
+                window.capitalsLayer2 = null;
+
+                let layerCount = 0;
                 window.map.eachLayer(function (layer) {
                     if (layer instanceof L.FeatureGroup) {
                         if (!window.countriesLayer) window.countriesLayer = layer;
                         else if (!window.subdivisionsLayer) window.subdivisionsLayer = layer;
-                        else if (!window.capitalsLayer) window.capitalsLayer = layer;  
+                        else if (!window.capitalsLayer) window.capitalsLayer = layer;
+                        else if (!window.capitalsLayer2) window.capitalsLayer2 = layer;
                     }
                 });
-            
+
                 function updateLayers() {
                     let zoom = window.map.getZoom();
-            
+
                     if (zoom > 4) {
                         window.map.removeLayer(window.countriesLayer);
                         window.map.addLayer(window.subdivisionsLayer);
@@ -86,19 +93,26 @@ class App:
                         window.map.removeLayer(window.subdivisionsLayer);
                         window.map.addLayer(window.countriesLayer);
                     }
-            
+
                     if (zoom > 3) {
                         window.map.addLayer(window.capitalsLayer);
                     } else {
                         window.map.removeLayer(window.capitalsLayer);
                     }
+
+                    if (zoom > 6) {
+                        window.map.addLayer(window.capitalsLayer2);
+                    } else {
+                        window.map.removeLayer(window.capitalsLayer2);
+                    }
                 }
-            
+
                 window.map.removeLayer(window.subdivisionsLayer);
                 window.map.removeLayer(window.capitalsLayer); 
+                window.map.removeLayer(window.capitalsLayer2); 
                 window.map.on('zoomend', updateLayers);
                 updateLayers();
-        });
+            });
         </script>
         """))
 
@@ -134,6 +148,7 @@ class App:
             key = input("Please enter the API Key for Weatherbit.io: ")
             response = requests.get(f"https://api.weatherbit.io/v2.0/current?city=Denver&key={key}")
             # If the response is 200 (ok) then break out of loop, otherwise print error
+            print(response.status_code)
             if response.status_code == 200:
                 valid_key = True
             else:
