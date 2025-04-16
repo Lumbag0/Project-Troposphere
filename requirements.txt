@@ -1,0 +1,6 @@
+folium
+shapely
+scipy
+matplotlib
+pyqt5
+PyQtWebEngine
